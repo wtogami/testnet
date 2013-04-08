@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Litecoin Testnet</title>
+    <script type="text/javascript" src="jquery-1.8.1.js"></script>
+    <script type="text/javascript" src="underscore.js"></script>
+<style>
+	body
+	{
+		margin: 16px; 
+		background-color: #fff; 
+		color: #000;
+		font-family: "Consolas";
+		font-size: 14px;
+		white-space: pre; 
+	}
+
+	button, input { font-family: "Consolas"; }
+</style>
+
+<script type="text/javascript">
+
+function dpc(t,fn) { if(typeof(t) == 'function') setTimeout(t,0); else setTimeout(fn,t); }
+
+function jt(o) { return JSON.stringify(o, null, '    ') }
+
+function Application() {
+	var self = this;
+
+    self.update = function() {
+        $.ajax({
+            dataType: "json",
+            url: "/status",
+            // data: { },
+            error : function() {
+                dpc(5000, self.update);
+            }, 
+            success: function(response) {
+                dpc(<%= HTTP_POLL_FREQ %>,self.update);
+
+                $("#info").html(jt(response.info));
+                $("#peer_info").html(jt(response.peer_info));
+                $("#address").html(response.address);
+                $("#balance_0").html(response.balance_0);
+                $("#balance_1").html(response.balance_1);
+            }
+        });
+    }
+
+    self.update();
+
+    $("#send").click(function(){
+    	var amount = $("#send_amount").val();
+    	var address = $("#send_address").val();
+
+    	$.getJSON("/send?address="+address+"&amount="+amount, function(data) {
+    		$("#send_response").html(jt(data));
+    	});
+    })
+
+    $("#tx_lookup").click(function(){
+    	var txhash = $("#tx_input").val();
+
+    	$.getJSON("/tx/"+txhash, function(data) {
+    		$("#tx_info").html(jt(data));
+    	});
+    })
+
+    $("#block_lookup").click(function(){
+    	var blockhash = $("#tx_input").val();
+
+    	$.getJSON("/block/"+blockhash, function(data) {
+    		$("#block_info").html(jt(data));
+    	});
+    })
+
+}
+
+
+$(document).ready(function() {
+	window.app = new Application();
+});
+
+</script>
+
+</head>
+<body><div id='wrapper'><div id='content'>LITECOIN TESTNET NODE INTERFACE
+
+--- WALLET ---
+WALLET ADDRESS: <span id='address'></span>
+BALANCE (0 confirms): <span id='balance_0'></span>
+BALANCE (1 confirms): <span id='balance_1'></span>
+
+--- SEND ---
+TO ADDRESS: <input id='send_address' type='text'  style='width:300px;'/>
+AMOUNT:     <input id='send_amount' type='text' />
+<button id='send'>SEND</button>
+
+RESPONSE:
+<span id='send_response'></span>
+
+-------------------
+LOOKUP TX HASH: <input id='tx_input' type='text' style='width:400px;' /><button id='tx_lookup'>LOOKUP</button>
+<span id='tx_info'></span>
+
+-------------------
+LOOKUP BLOCK HASH: <input id='block_input' type='text' style='width:400px;' /><button id='block_lookup'>LOOKUP</button>
+<span id='block_info'></span>
+
+--- getInfo ---
+<span id='info'></span>
+
+--- getPeerInfo ---
+<span id='peer_info'></span>
+
+	</div>
+</div>
+</body>
+</html>
