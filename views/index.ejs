@@ -17,6 +17,10 @@
 	}
 
 	button, input { font-family: "Consolas"; }
+    table { border-collapse: collapse; }
+    td, th { padding: 8px; text-align: center; border: 1px solid #ccc; }
+
+
 </style>
 
 <script type="text/javascript">
@@ -39,11 +43,30 @@ function Application() {
             success: function(response) {
                 dpc(<%= HTTP_POLL_FREQ %>,self.update);
 
-                $("#info").html(jt(response.info));
-                $("#peer_info").html(jt(response.peer_info));
                 $("#address").html(response.address);
                 $("#balance_0").html(response.balance_0);
                 $("#balance_1").html(response.balance_1);
+
+                var str = "";
+                // ---
+
+                str = "<table>"
+                _.each(response.info, function(v,n) {
+                    str += "<tr><td style='text-align:left;'>"+n+"</td><td style='text-align:left;'>"+v+"</td></tr>";
+                })
+                str += "</table>";
+                $("#info").html(str);
+
+
+                // ---
+
+                str = "<table><tr><th>ADDR</th><th>SERVICES</th><th>LASTSEND</th><th>LASTRECV</th><th>CONNTIME</th><th>VERSION</th><th>SUBVER</th><th>INBOUND</th><th>RELEASE<br/>TIME</th><th>STARTING<br/>HEIGHT</th><th>BANSCORE</th></tr>";
+                var template = 
+                _.each(response.peer_info, function(peer) {
+                    str += "<tr><td>"+peer.addr+"</td><td>"+peer.services+"</td><td>"+peer.lastsend+"</td><td>"+peer.lastrecv+"</td><td>"+peer.conntime+"</td><td>"+peer.version+"</td><td>"+peer.subver+"</td><td>"+peer.inbound+"</td><td>"+peer.releasetime+"</td><td>"+peer.startingheight+"</td><td>"+peer.banscore+"</td></tr>";
+                });
+                str += "</table>";
+                $("#peer_info").html(str);
             }
         });
     }
@@ -51,12 +74,20 @@ function Application() {
     self.update();
 
     $("#send").click(function(){
-    	var amount = $("#send_amount").val();
-    	var address = $("#send_address").val();
+        var amount = $("#send_amount").val();
+        var address = $("#send_address").val();
 
-    	$.getJSON("/send?address="+address+"&amount="+amount, function(data) {
-    		$("#send_response").html(jt(data));
-    	});
+        $.getJSON("/send?address="+address+"&amount="+amount, function(data) {
+            $("#send_response").html(jt(data));
+        });
+    })
+
+    $("#set_fee").click(function(){
+        var fee = $("#fee_amount").val();
+
+        $.getJSON("/fee?fee="+fee, function(data) {
+            $("#fee_response").html(jt(data));
+        });
     })
 
     $("#tx_lookup").click(function(){
@@ -100,6 +131,13 @@ AMOUNT:     <input id='send_amount' type='text' />
 RESPONSE:
 <span id='send_response'></span>
 
+--- SET TX FEE ---
+FEE: <input id='fee_amount' type='text' />
+<button id='set_fee'>SET TX FEE</button>
+
+RESPONSE:
+<span id='fee_response'></span>
+
 -------------------
 LOOKUP TX HASH: <input id='tx_input' type='text' style='width:400px;' /><button id='tx_lookup'>LOOKUP</button>
 <span id='tx_info'></span>
@@ -108,10 +146,10 @@ LOOKUP TX HASH: <input id='tx_input' type='text' style='width:400px;' /><button 
 LOOKUP BLOCK HASH: <input id='block_input' type='text' style='width:400px;' /><button id='block_lookup'>LOOKUP</button>
 <span id='block_info'></span>
 
---- getInfo ---
+INFO:
 <span id='info'></span>
 
---- getPeerInfo ---
+CONNECTED PEERS:
 <span id='peer_info'></span>
 
 	</div>

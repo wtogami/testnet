@@ -1,21 +1,5 @@
 // A miniature HTTP interface for litecoind
 
-// Configuration:
-
-var HTTP_SERVER_PORT = 8080;
-
-var LITECOIN_RPC_CONFIG = {
-    host: '127.0.0.1',
-    port: 20332,
-    user: 'testnet',
-    pass: 'q1w2e3r4'
-}
-
-var DAEMON_POLL_FREQ = 5000;
-var HTTP_POLL_FREQ = 2000;
-
-// ----------------------------------------------------------
-
 var JSON = require("json"),
     fs = require('fs'),
     os = require('os'),
@@ -27,6 +11,26 @@ var JSON = require("json"),
 
 
 function dpc(t,fn) { if(typeof(t) == 'function') setTimeout(t,0); else setTimeout(fn,t); }
+
+// Read config from the config folder. This function will check for 'name.hostname.cfg'
+// and if not present, it will read 'name.cfg'.  This allows user to create a custom 
+// local config file without distrupting the main config.
+function get_config(name) {
+
+    var host_filename = __dirname + '/config/'+name+'.'+os.hostname()+'.cfg';
+    var filename = __dirname + '/config/'+name+'.cfg';
+    var data = undefined;
+    if(fs.existsSync(host_filename)) {
+        data = fs.readFileSync(host_filename);
+        console.log("Reading config:",host_filename);
+    }
+    else {
+        data = fs.readFileSync(filename);
+        console.log("Reading config:",filename);
+    }
+
+    return eval('('+data.toString('utf-8')+')');
+}
 
 function no_cache(res, is_json) {
     res.header("Cache-Control", "no-cache, no-store, must-revalidate");
@@ -40,9 +44,11 @@ function Application() {
     var self = this;
     self.status = { }
 
+    var config = get_config('testnet');
+
     console.log("Starting...".bold);
 
-    self.client = new wallet_interface.Client(LITECOIN_RPC_CONFIG);
+    self.client = new wallet_interface.Client(config.daemon);
 
     var app = express();
 
@@ -53,7 +59,7 @@ function Application() {
     });
 
     app.get('/', function(req, res, next) {
-        res.render('index.ejs', { self : self, HTTP_POLL_FREQ : HTTP_POLL_FREQ });
+        res.render('index.ejs', { self : self, HTTP_POLL_FREQ : config.http_poll_freq });
     });
 
     app.get('/status', function(req, res) {
@@ -77,6 +83,19 @@ function Application() {
                 res.end(JSON.stringify(txinfo));
             })
 
+        })
+    });
+
+    app.get('/fee', function(req, res) {
+        no_cache(res, true);
+        if(!req.query.fee)
+            return res.end(JSON.stringify({ error : "fee value is required" }));
+
+        self.client.setTxFee(parseFloat(req.query.fee), function(err) {
+            if(err)
+                return res.end(JSON.stringify(err));
+
+            res.end("\"OK - FEE IS SET TO "+req.query.fee+" (info should change in few sec.)\"");
         })
     });
 
@@ -112,8 +131,8 @@ function Application() {
 
     app.use(express.static('http/'));
 
-    console.log("HTTP server listening on ports: ",HTTP_SERVER_PORT);
-    http.createServer(app).listen(HTTP_SERVER_PORT);
+    console.log("HTTP server listening on ports: ",config.http_port);
+    http.createServer(app).listen(config.http_port);
 
     function init() {
         self.client.getAccountAddress('', function(err, address) {
@@ -150,7 +169,7 @@ function Application() {
                             console.error("getBalance error:", err);
                         self.status.balance_1 = balance_1;
 
-                        dpc(DAEMON_POLL_FREQ, update_status);
+                        dpc(config.daemon_poll_freq, update_status);
                         
                     })                
                 })                
