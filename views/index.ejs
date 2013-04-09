@@ -13,13 +13,20 @@
 		color: #000;
 		font-family: "Consolas";
 		font-size: 14px;
-		white-space: pre; 
+		xwhite-space: pre; 
 	}
+
+    .response { white-space: pre; }
+
+    a:link { text-decoration: none; color: #0051AD; }
+    a:visited { text-decoration: none; color: #0051AD; }
+    a:hover { text-decoration: none; color: #F04800; }
 
 	button, input { font-family: "Consolas"; }
     table { border-collapse: collapse; }
     td, th { padding: 8px; text-align: center; border: 1px solid #ccc; }
 
+    xfieldset { width : 700px; }
 
 </style>
 
@@ -50,9 +57,19 @@ function Application() {
                 var str = "";
                 // ---
 
+                _.each(response.last_blocks, function(o) {
+                    str += "<a href='http://testnet.litecointools.com:2750/block/"+o.hash+"' target='_blank'>"+o.height+" - "+o.hash+" <img src='link.gif'/></a><br/>";
+                });
+
+                $("#last_blocks").html(str);
+
+                // ---
+
                 str = "<table>"
                 _.each(response.info, function(v,n) {
-                    str += "<tr><td style='text-align:left;'>"+n+"</td><td style='text-align:left;'>"+v+"</td></tr>";
+                    str += "<tr><td style='text-align:left;'>"+n+"</td><td style='text-align:left;'>";
+                    str += v;
+                    str += "</td></tr>";
                 })
                 str += "</table>";
                 $("#info").html(str);
@@ -89,25 +106,7 @@ function Application() {
             $("#fee_response").html(jt(data));
         });
     })
-
-    $("#tx_lookup").click(function(){
-    	var txhash = $("#tx_input").val();
-
-    	$.getJSON("/tx/"+txhash, function(data) {
-    		$("#tx_info").html(jt(data));
-    	});
-    })
-
-    $("#block_lookup").click(function(){
-    	var blockhash = $("#tx_input").val();
-
-    	$.getJSON("/block/"+blockhash, function(data) {
-    		$("#block_info").html(jt(data));
-    	});
-    })
-
 }
-
 
 $(document).ready(function() {
 	window.app = new Application();
@@ -116,42 +115,45 @@ $(document).ready(function() {
 </script>
 
 </head>
-<body><div id='wrapper'><div id='content'>LITECOIN TESTNET NODE INTERFACE
+<body><div id='wrapper'><div id='content'>LITECOIN TESTNET NODE INTERFACE<p/>
 
---- WALLET ---
-WALLET ADDRESS: <span id='address'></span>
-BALANCE (0 confirms): <span id='balance_0'></span>
+<fieldset><legend>WALLET</legend>
+WALLET ADDRESS: <span id='address'></span><br/>
+BALANCE (0 confirms): <span id='balance_0'></span><br/>
 BALANCE (1 confirms): <span id='balance_1'></span>
-
---- SEND ---
+</fieldset>
+<br/>
+<fieldset><legend>SEND</legend>
 TO ADDRESS: <input id='send_address' type='text'  style='width:300px;'/>
 AMOUNT:     <input id='send_amount' type='text' />
 <button id='send'>SEND</button>
-
-RESPONSE:
-<span id='send_response'></span>
-
---- SET TX FEE ---
+<p>
+RESPONSE:<br/>
+<span id='send_response' class='response'></span>
+</p>
+</fieldset>
+<br/>
+<fieldset><legend>SET TX FEE</legend>
 FEE: <input id='fee_amount' type='text' />
 <button id='set_fee'>SET TX FEE</button>
-
-RESPONSE:
-<span id='fee_response'></span>
-
--------------------
-LOOKUP TX HASH: <input id='tx_input' type='text' style='width:400px;' /><button id='tx_lookup'>LOOKUP</button>
-<span id='tx_info'></span>
-
--------------------
-LOOKUP BLOCK HASH: <input id='block_input' type='text' style='width:400px;' /><button id='block_lookup'>LOOKUP</button>
-<span id='block_info'></span>
-
-INFO:
+<p>
+RESPONSE:<br/>
+<span id='fee_response' class='response'></span>
+</p>
+</fieldset>
+<br/>
+<fieldset><legend>LAST 10 BLOCKS</legend>
+<span id='last_blocks'></span>
+</fieldset>
+<br/>
+<fieldset><legend>INFO</legend>
 <span id='info'></span>
-
-CONNECTED PEERS:
+</fieldset>
+<br/>
+<fieldset><legend>CONNECTED PEERS</legend>
 <span id='peer_info'></span>
-
+</fieldset>
+<br/>
 	</div>
 </div>
 </body>

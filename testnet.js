@@ -117,6 +117,8 @@ function Application() {
     app.get('/block/:blockhash', function(req, res) {
         no_cache(res, true);
 
+        console.log("LOOKING FOR:",req.params.blockhash);
+
         if(!req.params.blockhash)
             return res.end(JSON.stringify({ error : "blockhash is required" }));
 
@@ -169,8 +171,34 @@ function Application() {
                             console.error("getBalance error:", err);
                         self.status.balance_1 = balance_1;
 
-                        dpc(config.daemon_poll_freq, update_status);
-                        
+                        self.status.last_blocks = [ ]
+
+                        var blocks = [ ]
+                        var n = info.blocks;
+                        for(var i = 0; i < 10; i++)
+                            blocks.push(n-i);
+
+                        get_block();
+
+                        function get_block() {
+
+                            var height = blocks.shift();
+
+                            if(!height)
+                                return dpc(config.daemon_poll_freq, update_status);
+
+                            self.client.getBlockHash(height, function(err, blockhash) {
+                                if(err)
+                                    console.error("getBlockHash error:", err);
+
+                                self.status.last_blocks.push({
+                                    height : height,
+                                    hash : blockhash
+                                });
+
+                                get_block();                               
+                            })
+                        }                        
                     })                
                 })                
             })
