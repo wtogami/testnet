@@ -9,6 +9,27 @@ var JSON = require("json"),
 	colors = require('colors'),
     wallet_interface = require('bitcoin');
 
+var limits = { }
+
+function get_client_ip(req) {
+  var ipAddress;
+  // Amazon EC2 / Heroku workaround to get real client IP
+  var forwardedIpsStr = req.header('x-forwarded-for'); 
+  if (forwardedIpsStr) {
+    // 'x-forwarded-for' header may return multiple IP addresses in
+    // the format: "client IP, proxy 1 IP, proxy 2 IP" so take the
+    // the first one
+    var forwardedIps = forwardedIpsStr.split(',');
+    ipAddress = forwardedIps[0];
+  }
+  if (!ipAddress) {
+    // Ensure getting client IP address still works in
+    // development environment
+    ipAddress = req.connection.remoteAddress;
+  }
+  return ipAddress;
+};
+
 
 function dpc(t,fn) { if(typeof(t) == 'function') setTimeout(t,0); else setTimeout(fn,t); }
 
@@ -72,7 +93,27 @@ function Application() {
         if(!req.query.address || !req.query.amount)
             return res.end(JSON.stringify({ error : "address and amount are required" }));
 
-        self.client.sendToAddress(req.query.address, parseFloat(req.query.amount), '', function(err, txhash) {
+	var ip = get_client_ip(req);
+
+	var limit = 100;
+
+	var amount = parseFloat(req.query.amount);
+	if(amount > limit)
+		amount = limit;
+
+	if(!limits[ip])
+		limits[ip] = 0;
+
+	var to_send = amount;// + limits[ip];
+	if(to_send + limits[ip] > limit)
+		to_send = limit - limits[ip];
+
+	if(to_send <= 0)
+	  return res.end(JSON.stringify({ error : 'maximum amount exceeded, already sent '+limits[ip]+' coins'}));
+
+	limits[ip] += to_send;
+
+        self.client.sendToAddress(req.query.address, to_send ,'', function(err, txhash) {
             if(err)
                 return res.end(JSON.stringify(err));
 
@@ -91,7 +132,11 @@ function Application() {
         if(!req.query.fee)
             return res.end(JSON.stringify({ error : "fee value is required" }));
 
-        self.client.setTxFee(parseFloat(req.query.fee), function(err) {
+	var fee = parseFloat(req.query.fee);
+	if(fee > 10)
+		fee = 10;
+
+        self.client.setTxFee(fee, function(err) {
             if(err)
                 return res.end(JSON.stringify(err));
 
