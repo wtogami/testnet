@@ -95,7 +95,7 @@ function Application() {
 
 	var ip = get_client_ip(req);
 
-	var limit = 100;
+	var limit = 1000;
 
 	var amount = parseFloat(req.query.amount);
 	if(amount > limit)
@@ -111,8 +111,6 @@ function Application() {
 	if(to_send <= 0)
 	  return res.end(JSON.stringify({ error : 'maximum amount exceeded, already sent '+limits[ip]+' coins'}));
 
-	limits[ip] += to_send;
-
         self.client.sendToAddress(req.query.address, to_send ,'', function(err, txhash) {
             if(err)
                 return res.end(JSON.stringify(err));
@@ -120,6 +118,8 @@ function Application() {
             self.client.getTransaction(txhash, function(err, txinfo) {
                 if(err)
                     return res.end(JSON.stringify(err));
+
+		limits[ip] += to_send;
 
                 res.end(JSON.stringify(txinfo));
             })
