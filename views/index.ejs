@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Litecoin Testnet</title>
+    <script type="text/javascript" src="jquery-1.8.1.js"></script>
+    <script type="text/javascript" src="underscore.js"></script>
+<style>
+	body
+	{
+		margin: 16px; 
+		background-color: #fff; 
+		color: #000;
+		font-family: "Consolas";
+		font-size: 14px;
+		xwhite-space: pre; 
+	}
+
+    .response { white-space: pre; }
+
+    a:link { text-decoration: none; color: #0051AD; }
+    a:visited { text-decoration: none; color: #0051AD; }
+    a:hover { text-decoration: none; color: #F04800; }
+
+	button, input { font-family: "Consolas"; }
+    table { border-collapse: collapse; }
+    td, th { padding: 8px; text-align: center; border: 1px solid #ccc; }
+
+    xfieldset { width : 700px; }
+
+</style>
+
+<script type="text/javascript">
+
+function dpc(t,fn) { if(typeof(t) == 'function') setTimeout(t,0); else setTimeout(fn,t); }
+
+function jt(o) { return JSON.stringify(o, null, '    ') }
+
+function Application() {
+	var self = this;
+
+    self.update = function() {
+        $.ajax({
+            dataType: "json",
+            url: "/status",
+            // data: { },
+            error : function() {
+                dpc(5000, self.update);
+            }, 
+            success: function(response) {
+                dpc(<%= HTTP_POLL_FREQ %>,self.update);
+
+                $("#address").html(response.address);
+                $("#balance_0").html(response.balance_0);
+                $("#balance_1").html(response.balance_1);
+
+                var str = "";
+                // ---
+
+                _.each(response.last_blocks, function(o) {
+                    str += "<a href='http://testnet.litecointools.com:2750/block/"+o.hash+"' target='_blank'>"+o.height+" - "+o.hash+" <img src='link.gif'/></a><br/>";
+                });
+
+                $("#last_blocks").html(str);
+
+                // ---
+
+                str = "<table>"
+                _.each(response.info, function(v,n) {
+                    str += "<tr><td style='text-align:left;'>"+n+"</td><td style='text-align:left;'>";
+                    str += v;
+                    str += "</td></tr>";
+                })
+                str += "</table>";
+                $("#info").html(str);
+
+
+                // ---
+
+                str = "<table><tr><th>ADDR</th><th>SERVICES</th><th>LASTSEND</th><th>LASTRECV</th><th>CONNTIME</th><th>VERSION</th><th>SUBVER</th><th>INBOUND</th><th>RELEASE<br/>TIME</th><th>STARTING<br/>HEIGHT</th><th>BANSCORE</th></tr>";
+                var template = 
+                _.each(response.peer_info, function(peer) {
+                    str += "<tr><td>"+peer.addr+"</td><td>"+peer.services+"</td><td>"+peer.lastsend+"</td><td>"+peer.lastrecv+"</td><td>"+peer.conntime+"</td><td>"+peer.version+"</td><td>"+peer.subver+"</td><td>"+peer.inbound+"</td><td>"+peer.releasetime+"</td><td>"+peer.startingheight+"</td><td>"+peer.banscore+"</td></tr>";
+                });
+                str += "</table>";
+                $("#peer_info").html(str);
+            }
+        });
+    }
+
+    self.update();
+
+    $("#send").click(function(){
+        var amount = $("#send_amount").val();
+        var address = $("#send_address").val();
+
+        $.getJSON("/send?address="+address+"&amount="+amount, function(data) {
+            $("#send_response").html(jt(data));
+        });
+    })
+
+    $("#set_fee").click(function(){
+        var fee = $("#fee_amount").val();
+
+        $.getJSON("/fee?fee="+fee, function(data) {
+            $("#fee_response").html(jt(data));
+        });
+    })
+}
+
+$(document).ready(function() {
+	window.app = new Application();
+});
+
+</script>
+
+</head>
+<body><div id='wrapper'><div id='content'>LITECOIN TESTNET NODE INTERFACE<p/>
+
+<fieldset><legend>WALLET</legend>
+WALLET ADDRESS: <span id='address'></span><br/>
+BALANCE (0 confirms): <span id='balance_0'></span><br/>
+BALANCE (1 confirms): <span id='balance_1'></span>
+</fieldset>
+<br/>
+<fieldset><legend>SEND</legend>
+TO ADDRESS: <input id='send_address' type='text'  style='width:300px;'/>
+AMOUNT:     <input id='send_amount' type='text' />
+<button id='send'>SEND</button>
+<p>
+RESPONSE:<br/>
+<span id='send_response' class='response'></span>
+</p>
+</fieldset>
+<br/>
+<fieldset><legend>SET TX FEE</legend>
+FEE: <input id='fee_amount' type='text' />
+<button id='set_fee'>SET TX FEE</button>
+<p>
+RESPONSE:<br/>
+<span id='fee_response' class='response'></span>
+</p>
+</fieldset>
+<br/>
+<fieldset><legend>LAST 10 BLOCKS</legend>
+<span id='last_blocks'></span>
+</fieldset>
+<br/>
+<fieldset><legend>INFO</legend>
+<span id='info'></span>
+</fieldset>
+<br/>
+<fieldset><legend>CONNECTED PEERS</legend>
+<span id='peer_info'></span>
+</fieldset>
+<br/>
+	</div>
+</div>
+</body>
+</html>

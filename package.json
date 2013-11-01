@@ -1,0 +1,14 @@
+{
+  "name": "testnet",
+  "version": "0.0.1",
+  "author": "Anton Yemelyanov",
+  "description": "Basic Litecoin testnet interface",
+  "private": false,
+  "dependencies": {
+    "underscore": "*",
+    "colors" : "*",
+    "express" : "*",
+    "connect" : "*",
+    "ejs" : "*"
+  }
+}
