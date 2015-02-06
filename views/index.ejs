@@ -58,7 +58,7 @@ function Application() {
                 // ---
 
                 _.each(response.last_blocks, function(o) {
-                    str += "<a href='http://testnet.litecointools.com:2750/block/"+o.hash+"' target='_blank'>"+o.height+" - "+o.hash+" <img src='link.gif'/></a><br/>";
+                    str += "<a href='http://explorer.litecointools.com/block/"+o.hash+"' target='_blank'>"+o.height+" - "+o.hash+" <img src='link.gif'/></a><br/>";
                 });
 
                 $("#last_blocks").html(str);
@@ -124,7 +124,7 @@ BALANCE (1 confirms): <span id='balance_1'></span>
 </fieldset>
 <br/>
 <fieldset><legend>SEND</legend>
-Limit: 1000 coins per IP.<br/>
+Limit: 10 coins per IP.<br/>
 TO ADDRESS: <input id='send_address' type='text'  style='width:300px;'/>
 AMOUNT:     <input id='send_amount' type='text' />
 <button id='send'>SEND</button>

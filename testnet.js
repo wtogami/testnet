@@ -9,10 +9,21 @@ var JSON = require("json"),
 	colors = require('colors'),
     wallet_interface = require('bitcoin');
 
+var RESET_TIME = 1000*60*60*24*2;
+
 var limits = { }
+resetLimits();
+
+
+function dpc(t,fn) { if(typeof(t) == 'function') setTimeout(t,0); else setTimeout(fn,t); }
+
+function resetLimits() {
+  limits = { }
+  dpc(RESET_TIME, resetLimits);
+}
 
 function get_client_ip(req) {
-  var ipAddress;
+  var ipAddress = null;
   // Amazon EC2 / Heroku workaround to get real client IP
   var forwardedIpsStr = req.header('x-forwarded-for'); 
   if (forwardedIpsStr) {
@@ -22,6 +33,9 @@ function get_client_ip(req) {
     var forwardedIps = forwardedIpsStr.split(',');
     ipAddress = forwardedIps[0];
   }
+
+  ipAddress = req.header('X-Real-IP');
+
   if (!ipAddress) {
     // Ensure getting client IP address still works in
     // development environment
@@ -29,9 +43,6 @@ function get_client_ip(req) {
   }
   return ipAddress;
 };
-
-
-function dpc(t,fn) { if(typeof(t) == 'function') setTimeout(t,0); else setTimeout(fn,t); }
 
 // Read config from the config folder. This function will check for 'name.hostname.cfg'
 // and if not present, it will read 'name.cfg'.  This allows user to create a custom 
@@ -95,7 +106,7 @@ function Application() {
 
 	var ip = get_client_ip(req);
 
-	var limit = 1000;
+	var limit = 10;
 
 	var amount = parseFloat(req.query.amount);
 	if(amount > limit)
@@ -107,6 +118,9 @@ function Application() {
 	var to_send = amount;// + limits[ip];
 	if(to_send + limits[ip] > limit)
 		to_send = limit - limits[ip];
+
+// console.log("ip:",ip,"limit:",limit,"limits[ip]:",limits[ip],"to_send:",to_send);
+// console.log("req.connection",req);
 
 	if(to_send <= 0)
 	  return res.end(JSON.stringify({ error : 'maximum amount exceeded, already sent '+limits[ip]+' coins'}));
