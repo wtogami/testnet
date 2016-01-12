@@ -1,0 +1,14 @@
+{
+  "name": "testnet-faucet",
+  "version": "0.0.4",
+  "description": "Bitcoin Testnet Faucet",
+  "main": "app.js",
+  "dependencies": {
+    "bitcoin": "*",
+    "ejs": "^0.8.3",
+    "express": "^3",
+    "qr-image": "^1.2.0",
+    "underscore": "*",
+    "colors": "*"
+  }
+}
